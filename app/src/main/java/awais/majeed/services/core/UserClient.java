@@ -17,4 +17,9 @@ public interface UserClient {
     @FormUrlEncoded
     @POST("QRServices/checkValidity.php")
     Call<String> validateRegNo(@Field("regNo") String regNo);
+
+    @FormUrlEncoded
+    @POST("QRServices/saveInformationTracks.php")
+    Call<String> saveInformationTracks(@Field("data") String data);
+
 }

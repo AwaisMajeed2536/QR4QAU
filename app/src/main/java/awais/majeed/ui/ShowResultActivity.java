@@ -1,7 +1,15 @@
 package awais.majeed.ui;
 
+import android.Manifest;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationManager;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
@@ -17,9 +25,15 @@ import awais.majeed.R;
 import awais.majeed.services.ValidateRegistrationNoService;
 import awais.majeed.services.core.Result;
 import awais.majeed.utils.UtilHelpers;
+import io.nlopez.smartlocation.SmartLocation;
+import io.nlopez.smartlocation.rx.ObservableFactory;
+import io.reactivex.Observable;
+import io.reactivex.functions.Consumer;
 
 public class ShowResultActivity extends AppCompatActivity implements View.OnClickListener, Result<String> {
 
+    private final int GPS_ENABLE_REQUEST_KEY = 176;
+    private final int LOCATOIN_PERMISSION_REQUEST_KEY = 239;
     public static final String SCAN_RESULT_KEY = "scan_result_key";
     protected Button scanAgainButton;
     protected ImageView cardOwnerImageIv;
@@ -29,6 +43,7 @@ public class ShowResultActivity extends AppCompatActivity implements View.OnClic
     protected TextView cardOwnerAddressTv;
     protected TextView cardOwnerRegistrationTv;
     protected TextView cardOwnerEmailTv;
+    private String regNo, dateTime, latLong, deviceMac;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,18 +82,23 @@ public class ShowResultActivity extends AppCompatActivity implements View.OnClic
             cardOwnerContactTv.setText("Contact No: \n" + contactNo);
             String address = responseData.getString("address");
             cardOwnerAddressTv.setText("Address : \n" + address);
-            String regNo = responseData.getString("registrationNo");
+            regNo = responseData.getString("registrationNo");
             cardOwnerRegistrationTv.setText("Registration No : \n" + regNo);
             String email = responseData.getString("email");
             cardOwnerEmailTv.setText("Email : \n" + email);
+            saveInformation();
         } catch (JSONException e) {
             e.printStackTrace();
         }
     }
 
+    private void saveInformation() {
+
+    }
+
     @Override
     public void onFailure(String message, int requestId) {
-        UtilHelpers.showAlertDialog(this, "Invalid Registration No","no records found against this registration no...");
+        UtilHelpers.showAlertDialog(this, "Invalid Registration No", "no records found against this registration no...");
     }
 
     @Override
@@ -103,5 +123,76 @@ public class ShowResultActivity extends AppCompatActivity implements View.OnClic
         cardOwnerEmailTv = (TextView) findViewById(R.id.card_owner_email_tv);
         scanAgainButton = (Button) findViewById(R.id.scan_again_button);
         scanAgainButton.setOnClickListener(ShowResultActivity.this);
+    }
+
+    private void askToEnableGPS() {
+        AlertDialog gpsEnableDialog = new AlertDialog.Builder(this).setTitle("Location Service Disabled")
+                .setMessage("This app needs location service to function properly")
+                .setPositiveButton("okay", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                        Intent gpsOptionsIntent = new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                        startActivityForResult(gpsOptionsIntent, GPS_ENABLE_REQUEST_KEY);
+                    }
+                }).setCancelable(false).create();
+        gpsEnableDialog.show();
+    }
+
+
+    private void getLocation() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(ShowResultActivity.this,
+                Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            askLocationPermission();
+            return;
+        }
+        Observable<Location> locationObservable = ObservableFactory.from(SmartLocation.with(this).location());
+        locationObservable.subscribe(new Consumer<Location>() {
+            @Override
+            public void accept(@io.reactivex.annotations.NonNull Location location) throws Exception {
+                try {
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
+    public void askLocationPermission() {
+        String[] permissions = {Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION};
+        ActivityCompat.requestPermissions(this, permissions, LOCATOIN_PERMISSION_REQUEST_KEY);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == GPS_ENABLE_REQUEST_KEY) {
+            LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+            if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                getLocation();
+            }
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == LOCATOIN_PERMISSION_REQUEST_KEY) {
+            try {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+//                    requestLocationUpdates();
+                    LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+                    if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                        getLocation();
+                    } else {
+                        askToEnableGPS();
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 }
