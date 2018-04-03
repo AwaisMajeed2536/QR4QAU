@@ -1,6 +1,8 @@
 package awais.majeed.services.core;
 
+import awais.majeed.models.InfromationTrackModel;
 import retrofit2.Call;
+import retrofit2.http.Body;
 import retrofit2.http.POST;
 import retrofit2.http.Field;
 import retrofit2.http.FormUrlEncoded;
@@ -18,8 +20,7 @@ public interface UserClient {
     @POST("QRServices/checkValidity.php")
     Call<String> validateRegNo(@Field("regNo") String regNo);
 
-    @FormUrlEncoded
     @POST("QRServices/saveInformationTracks.php")
-    Call<String> saveInformationTracks(@Field("data") String data);
+    Call<String> saveInformationTracks(@Body InfromationTrackModel data);
 
 }

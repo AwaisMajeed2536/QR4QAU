@@ -7,7 +7,13 @@ import android.os.Build;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
+
+import java.net.NetworkInterface;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.List;
 
 import awais.majeed.interfaces.AlertDialogCallback;
 
@@ -47,12 +53,12 @@ public class UtilHelpers {
                 waitDialog.setCancelable(false);
                 waitDialog.show();
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public static void dismissWaitDialog(){
+    public static void dismissWaitDialog() {
         try {
             if (waitDialog != null && waitDialog.isShowing()) {
                 waitDialog.dismiss();
@@ -64,10 +70,9 @@ public class UtilHelpers {
     }
 
 
-
-    public static void hideUI(AppCompatActivity activity){
-        if(activity.getSupportActionBar() != null)
-        activity.getSupportActionBar().hide();
+    public static void hideUI(AppCompatActivity activity) {
+        if (activity.getSupportActionBar() != null)
+            activity.getSupportActionBar().hide();
         int uiOptions = activity.getWindow().getDecorView().getSystemUiVisibility();
         int newUiOptions = uiOptions;
         if (Build.VERSION.SDK_INT >= 14) {
@@ -81,5 +86,38 @@ public class UtilHelpers {
         }
 
         activity.getWindow().getDecorView().setSystemUiVisibility(newUiOptions);
+    }
+
+    public static String getMacAddr() {
+        try {
+            List<NetworkInterface> all = Collections.list(NetworkInterface.getNetworkInterfaces());
+            for (NetworkInterface nif : all) {
+                if (!nif.getName().equalsIgnoreCase("wlan0")) continue;
+
+                byte[] macBytes = nif.getHardwareAddress();
+                if (macBytes == null) {
+                    return "";
+                }
+
+                StringBuilder res1 = new StringBuilder();
+                for (byte b : macBytes) {
+                    res1.append(String.format("%02X:", b));
+                }
+
+                if (res1.length() > 0) {
+                    res1.deleteCharAt(res1.length() - 1);
+                }
+                return res1.toString();
+            }
+        } catch (Exception ex) {
+            Log.v("==>>", ex.getMessage());
+        }
+        return "02:00:00:00:00:00";
+    }
+
+    public static String getDateTimeNow() {
+        Calendar calendar = Calendar.getInstance();
+        return calendar.get(Calendar.DAY_OF_MONTH) + "-" + (calendar.get(Calendar.MONTH) + 1) + "-" + calendar.get(Calendar.YEAR)
+                + " " + calendar.get(Calendar.HOUR) + ":" + calendar.get(Calendar.MINUTE) + ":" + calendar.get(Calendar.SECOND);
     }
 }

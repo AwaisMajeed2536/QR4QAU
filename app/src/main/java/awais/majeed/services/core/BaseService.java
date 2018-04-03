@@ -45,7 +45,7 @@ public class BaseService implements Callback<String> {
             String message = response.body();
             try {
                 JSONObject responseObject = new JSONObject(message);
-                if (responseObject.getString("foundResult").equals("true")) {
+                if (responseObject.getString("foundResult").equalsIgnoreCase("true")) {
                     result.onSuccess(message, requestId);
                 } else {
                     result.onFailure("Failed!", requestId);

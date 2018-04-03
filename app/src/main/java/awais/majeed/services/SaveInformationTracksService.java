@@ -33,7 +33,7 @@ public class SaveInformationTracksService extends BaseService {
 
     public void callService(String regNo, String dateTime, String latLong, String deviceMac){
         InfromationTrackModel data = new InfromationTrackModel(regNo, dateTime, latLong, deviceMac);
-        String json = new Gson().toJson(data);
-        RetrofitClient.getRetrofit().create(UserClient.class).saveInformationTracks(json).enqueue(this);
+//        String json = new Gson().toJson(data);
+        RetrofitClient.getRetrofit().create(UserClient.class).saveInformationTracks(data).enqueue(this);
     }
 }
